@@ -1,35 +1,71 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { AuthProvider } from './contexts/AuthContext';
+import Navbar from './components/Navbar';
+import Home from './components/Home';
+import Store from './components/Store';
+import Community from './components/Community';
+import About from './components/About';
+import Login from './components/Login';
+import SignUp from './components/SignUp';
+import Profile from './components/Profile';
+import Support from './components/Support';
+import GameDetail from './components/GameDetail';
+import Footer from './components/Footer';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [currentView, setCurrentView] = useState('home');
+  const [selectedGame, setSelectedGame] = useState(null);
+
+  const handleNavigation = (view) => {
+    setCurrentView(view);
+    setSelectedGame(null);
+  };
+
+  const handleGameSelect = (game) => {
+    setSelectedGame(game);
+    setCurrentView('gameDetail');
+  };
+
+  const renderView = () => {
+    switch (currentView) {
+      case 'home':
+        return <Home onNavigate={handleNavigation} onGameSelect={handleGameSelect} />;
+      case 'store':
+        return <Store onNavigate={handleNavigation} onGameSelect={handleGameSelect} />;
+      case 'discover':
+        return <Store onNavigate={handleNavigation} onGameSelect={handleGameSelect} />;
+      case 'community':
+        return <Community onNavigate={handleNavigation} />;
+      case 'about':
+        return <About onNavigate={handleNavigation} />;
+      case 'login':
+        return <Login onNavigate={handleNavigation} />;
+      case 'signup':
+        return <SignUp onNavigate={handleNavigation} />;
+      case 'profile':
+        return <Profile onNavigate={handleNavigation} />;
+      case 'support':
+        return <Support onNavigate={handleNavigation} />;
+      case 'gameDetail':
+        return selectedGame ? (
+          <GameDetail game={selectedGame} onNavigate={handleNavigation} />
+        ) : (
+          <Home onNavigate={handleNavigation} onGameSelect={handleGameSelect} />
+        );
+      default:
+        return <Home onNavigate={handleNavigation} onGameSelect={handleGameSelect} />;
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <AuthProvider>
+      <div className="min-h-screen bg-slate-900">
+        <Navbar onNavigate={handleNavigation} currentView={currentView} />
+        <main>{renderView()}</main>
+        <Footer onNavigate={handleNavigation} />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
