@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';  // ✅ Importar JWT
 import nodemailer from 'nodemailer';
+import { sendVerificationEmail } from '../utils/sendEmail.js';
 
 // ✅ Función auxiliar FUERA de las otras funciones
 const generateToken = (userId) => {
@@ -15,58 +16,99 @@ const generateToken = (userId) => {
 
 // Función para registrar usuario
 export const signup = async (req, res) => {
+    console.log('🔵 INICIO DE SIGNUP');
+
     try {
         const { email, username, password } = req.body;
+        console.log('📝 Datos recibidos:', { email, username, password: '***' });
+
+        // Validar formato de contraseña
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         if (!passwordRegex.test(password)) {
+            console.log('❌ Contraseña no válida');
             return res.status(400).json({
-                message: 'La contraseña debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial (!@#$%^&*)'
+                error: 'La contraseña debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial (@$!%*?&)'
             });
         }
+        console.log('✅ Contraseña válida');
+
         if (!email || !username || !password) {
+            console.log('❌ Faltan campos');
             return res.status(400).json({
                 error: 'Todos los campos son requeridos'
             });
         }
+        console.log('✅ Todos los campos presentes');
 
         const emailExists = await User.findOne({ email });
-        const usernameExists = await User.findOne({ username });
-
         if (emailExists) {
+            console.log('❌ Email ya existe');
             return res.status(400).json({
                 error: 'El email ya está registrado'
             });
         }
+        console.log('✅ Email disponible');
 
+        const usernameExists = await User.findOne({ username });
         if (usernameExists) {
+            console.log('❌ Username ya existe');
             return res.status(400).json({
                 error: 'El username ya está en uso'
             });
         }
+        console.log('✅ Username disponible');
 
+        console.log('🔐 Hasheando contraseña...');
         const hashedPassword = await bcrypt.hash(password, 10);
-        const verificationToken = crypto.randomBytes(32).toString('hex');
+        console.log('✅ Contraseña hasheada');
 
+        console.log('🎲 Generando token de verificación...');
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        console.log('✅ Token generado:', verificationToken);
+
+        console.log('💾 Creando usuario en DB...');
         const newUser = new User({
             email,
             username,
             password: hashedPassword,
             verificationToken,
-            verificationTokenExpires: Date.now() + (15 * 60 * 1000)
+            verificationTokenExpires: Date.now() + 15 * 60 * 1000
         });
 
         await newUser.save();
+        console.log('✅ Usuario guardado en DB');
 
-        // TODO: Enviar email de verificación aquí
+        // ========== ENVÍO DE EMAIL ==========
+        console.log('📧 ========== INICIO ENVÍO EMAIL ==========');
+        console.log('📧 Email destino:', email);
+        console.log('📧 Username:', username);
+        console.log('📧 Token:', verificationToken);
 
+        try {
+            console.log('📧 Llamando a sendVerificationEmail...');
+            await sendVerificationEmail(email, username, verificationToken);
+            console.log('✅ ========== EMAIL ENVIADO EXITOSAMENTE ==========');
+        } catch (emailError) {
+            console.error('❌ ========== ERROR AL ENVIAR EMAIL ==========');
+            console.error('Error completo:', emailError);
+            console.error('Mensaje:', emailError.message);
+            if (emailError.response) {
+                console.error('Response body:', emailError.response.body);
+            }
+            console.error('Stack:', emailError.stack);
+            // NO fallar el registro si el email falla
+        }
+        console.log('📧 ========== FIN PROCESO EMAIL ==========');
+
+        console.log('✅ SIGNUP COMPLETADO - Enviando respuesta');
         res.status(201).json({
-            message: 'Usuario registrado. Revisa tu email para verificar tu cuenta.',
-            // Solo para desarrollo (eliminar en producción):
-            debug: { token: verificationToken }
+            message: 'Usuario registrado. Revisa tu email para verificar tu cuenta.'
         });
 
     } catch (error) {
-        console.error('Error en signup:', error);
+        console.error('❌ ERROR GENERAL EN SIGNUP:', error);
+        console.error('Mensaje:', error.message);
+        console.error('Stack:', error.stack);
         res.status(500).json({
             error: 'Error al registrar usuario',
             details: error.message

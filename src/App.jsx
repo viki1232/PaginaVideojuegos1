@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
@@ -11,15 +11,34 @@ import Profile from './components/Profile';
 import Support from './components/Support';
 import GameDetail from './components/GameDetail';
 import Footer from './components/Footer';
+import EmailVerification from './components/EmailVerification';
 
 function App() {
+
+
   const [currentView, setCurrentView] = useState('home');
   const [selectedGame, setSelectedGame] = useState(null);
+  const [verificationToken, setVerificationToken] = useState(null);
+  useEffect(() => {
+    const path = window.location.pathname;
+    const match = path.match(/\/verify\/(.+)/);
 
+    if (match) {
+      const token = match[1];
+      console.log('🔍 Token de verificación detectado:', token);
+      setVerificationToken(token);
+      setCurrentView('verify');
+    }
+  }, []);
   const handleNavigation = (view) => {
     setCurrentView(view);
     setSelectedGame(null);
+
+    if (currentView === 'verify') {
+      window.history.pushState({}, '', '/');
+    }
   };
+
 
   const handleGameSelect = (game) => {
     setSelectedGame(game);
@@ -46,6 +65,8 @@ function App() {
         return <Profile onNavigate={handleNavigation} />;
       case 'support':
         return <Support onNavigate={handleNavigation} />;
+      case 'verify':
+        return <EmailVerification token={verificationToken} onNavigate={handleNavigation} />;
       case 'gameDetail':
         return selectedGame ? (
           <GameDetail game={selectedGame} onNavigate={handleNavigation} />
@@ -64,6 +85,7 @@ function App() {
         <main>{renderView()}</main>
         <Footer onNavigate={handleNavigation} />
       </div>
+
     </AuthProvider>
   );
 }
