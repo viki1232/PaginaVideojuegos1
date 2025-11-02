@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import reviewRoutes from './routes/reviewRoutes.js';
+import perfilRoutes from './routes/perfilRoutes.js';
 
 dotenv.config();
 
@@ -25,8 +26,9 @@ mongoose.connect(process.env.MONGODB_URI)
         console.error('Error connecting to MongoDB:', err);
     });
 
-// ✅ RUTAS - ESTO ES CRÍTICO
-app.use('/api/auth', authRoutes);  // ← Debe estar AQUÍ
+
+app.use('/api/auth', authRoutes);
+app.use('/api', perfilRoutes);
 
 // Ruta raíz (opcional)
 app.get('/', (req, res) => {

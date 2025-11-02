@@ -1,144 +1,64 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Clock, Trophy, Star } from 'lucide-react';
+import { Clock, Trophy, Star, X } from 'lucide-react';
 
 const Profile = ({ onNavigate }) => {
     const { user, profile } = useAuth();
-    const [library, setLibrary] = useState([]);
+    const [userGames, setUserGames] = useState([]); // ✅ Estado local para juegos
     const [stats, setStats] = useState(null);
     const [recentActivity, setRecentActivity] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    // Datos de ejemplo para desarrollo
-    const mockLibrary = [
-        {
-            id: 1,
-            game_id: 0,
-            hours_played: 45.5,
-            is_completed: true,
-            added_at: '2025-01-15',
-            games: {
-                title: 'Cyber Warriors 2077',
-                cover_image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400'
-            }
-        },
-        {
-            id: 2,
-            game_id: 1,
-            hours_played: 23.2,
-            is_completed: false,
-            added_at: '2025-01-10',
-            games: {
-                title: 'Fantasy Quest',
-                cover_image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400'
-            }
-        },
-        {
-            id: 3,
-            game_id: 2,
-            hours_played: 67.8,
-            is_completed: true,
-            added_at: '2025-01-05',
-            games: {
-                title: 'Dragon\'s Legacy',
-                cover_image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=400'
-            }
-        }
-    ];
-
-    const mockActivity = [
-        {
-            type: 'review',
-            game: 'Cyber Warriors 2077',
-            game_id: 0,
-            time: '2025-01-20T10:30:00Z'
-        },
-        {
-            type: 'review',
-            game: 'Fantasy Quest',
-            game_id: 1,
-            time: '2025-01-18T15:45:00Z'
-        },
-        {
-            type: 'review',
-            game: 'Dragon\'s Legacy',
-            game_id: 2,
-            time: '2025-01-15T09:20:00Z'
-        }
-    ];
-
+    // ✅ Cargar juegos cuando el usuario inicia sesión
     useEffect(() => {
         if (user) {
-            fetchLibrary();
-            fetchStats();
-            fetchRecentActivity();
+            loadUserGames();
         }
     }, [user]);
 
-    const fetchLibrary = async () => {
-        try {
-            // Intentar cargar desde API/MongoDB
-            const response = await fetch(`/api/library?userId=${user.id}`);
-            if (response.ok) {
-                const data = await response.json();
-                setLibrary(data);
-            } else {
-                // Usar datos mock si falla
-                setLibrary(mockLibrary);
-            }
-        } catch (error) {
-            console.error('Error loading library:', error);
-            // Usar datos mock en caso de error
-            setLibrary(mockLibrary);
-        }
-    };
-
-    const fetchStats = async () => {
-        try {
-            const response = await fetch(`/api/stats?userId=${user.id}`);
-            if (response.ok) {
-                const data = await response.json();
-                setStats(data);
-            } else {
-                // Calcular stats desde mockLibrary
-                const totalGames = mockLibrary.length;
-                const completedGames = mockLibrary.filter(g => g.is_completed).length;
-                const totalHours = mockLibrary.reduce((acc, g) => acc + (g.hours_played || 0), 0);
-
-                setStats({
-                    total_games: totalGames,
-                    completed_games: completedGames,
-                    total_hours: totalHours
-                });
-            }
-        } catch (error) {
-            console.error('Error loading stats:', error);
-            // Calcular stats desde mockLibrary
-            const totalGames = mockLibrary.length;
-            const completedGames = mockLibrary.filter(g => g.is_completed).length;
-            const totalHours = mockLibrary.reduce((acc, g) => acc + (g.hours_played || 0), 0);
-
+    // ✅ Actualizar stats cuando cambien los juegos
+    useEffect(() => {
+        if (userGames.length > 0) {
             setStats({
-                total_games: totalGames,
-                completed_games: completedGames,
-                total_hours: totalHours
+                total_games: userGames.length,
+                completed_games: stats?.completed_games || 0,
+                total_hours: stats?.total_hours || 0
             });
         }
-    };
+    }, [userGames]);
 
-    const fetchRecentActivity = async () => {
+    // ✅ Cargar juegos desde el backend
+    const loadUserGames = async () => {
+        setLoading(true);
         try {
-            const response = await fetch(`/api/activity?userId=${user.id}`);
+            const response = await fetch(`http://localhost:2000/api/perfil/games/${user.id}`);
             if (response.ok) {
                 const data = await response.json();
-                setRecentActivity(data);
-            } else {
-                // Usar datos mock
-                setRecentActivity(mockActivity);
+                setUserGames(data.games || []);
+                console.log('✅ Juegos cargados:', data.games?.length || 0);
             }
         } catch (error) {
-            console.error('Error loading activity:', error);
-            // Usar datos mock
-            setRecentActivity(mockActivity);
+            console.error('❌ Error cargando juegos:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ✅ Eliminar juego de la biblioteca
+    const removeGame = async (gameId) => {
+        try {
+            const response = await fetch(`http://localhost:2000/api/perfil/games/${user.id}/${gameId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                setUserGames(userGames.filter(game => game.game_id !== gameId));
+                console.log('✅ Juego eliminado');
+                alert('Juego eliminado de tu biblioteca');
+            }
+        } catch (error) {
+            console.error('❌ Error eliminando juego:', error);
+            alert('Error al eliminar juego');
         }
     };
 
@@ -159,10 +79,10 @@ const Profile = ({ onNavigate }) => {
         <div className="profile-page">
             <div className="profile-header">
                 <div className="profile-avatar">
-                    {profile?.username?.charAt(0).toUpperCase() || 'U'}
+                    {user.username?.charAt(0).toUpperCase() || 'U'}
                 </div>
                 <div className="profile-info">
-                    <h1 className="profile-username">{profile?.username || 'User'}</h1>
+                    <h1 className="profile-username">{user.username || 'User'}</h1>
                     <p className="profile-bio">{profile?.bio || 'Gaming enthusiast'}</p>
                 </div>
             </div>
@@ -174,7 +94,7 @@ const Profile = ({ onNavigate }) => {
                         <div className="stat-item">
                             <Trophy size={24} className="stat-icon trophy-icon" />
                             <div className="stat-details">
-                                <div className="stat-value">{stats?.total_games || 0}</div>
+                                <div className="stat-value">{userGames?.length || 0}</div>
                                 <div className="stat-label">Games</div>
                             </div>
                         </div>
@@ -198,31 +118,32 @@ const Profile = ({ onNavigate }) => {
                 <div className="profile-main">
                     <div className="library-section">
                         <h2 className="section-title">My Library</h2>
-                        <div className="library-grid">
-                            {library.map(item => (
-                                <div
-                                    key={item.id}
-                                    className="library-item"
-                                    onClick={() => onNavigate('game', item.game_id)}
-                                >
-                                    <div className="library-cover">
-                                        {item.games?.cover_image ? (
-                                            <img src={item.games.cover_image} alt={item.games.title} />
-                                        ) : (
-                                            <div className="game-placeholder"></div>
-                                        )}
+
+                        {loading ? (
+                            <p>Loading games...</p>
+                        ) : userGames && userGames.length > 0 ? (
+                            <div className="library-grid">
+                                {userGames.map((game) => (
+                                    <div key={game.game_id} className="game-card">
+                                        <button
+                                            className="remove-game-btn"
+                                            onClick={() => removeGame(game.game_id)}
+                                            title="Remove from library"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                        <img
+                                            src={game.game_image}
+                                            alt={game.game_title}
+                                            onClick={() => onNavigate('game', game.game_id)}
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                        <h3>{game.game_title}</h3>
+                                        <p>${game.game_price}</p>
                                     </div>
-                                    <div className="library-info">
-                                        <h4 className="library-game-title">{item.games?.title}</h4>
-                                        <p className="library-hours">{item.hours_played || 0}h played</p>
-                                        {item.is_completed && (
-                                            <span className="completed-badge">✓ Completed</span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        {library.length === 0 && (
+                                ))}
+                            </div>
+                        ) : (
                             <div className="empty-state-small">
                                 <p className="empty-message-small">Your library is empty</p>
                                 <button

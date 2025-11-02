@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { gamesData } from '../data/gamesData';
 
 
-function GameDetail({ gameId, onNavigate }) {
+function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
     const [game, setGame] = useState(null);
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -413,7 +413,13 @@ function GameDetail({ gameId, onNavigate }) {
                                 <ShoppingCart size={20} />
                                 Purchase
                             </button>
-                            <button className="wishlist-button">
+                            <button
+                                className="add-to-library-button"
+                                onClick={() => onAddToLibrary(game)}
+                            >
+
+                                <ShoppingCart className="wishlist-button" />
+
                                 Add to Wishlist
                             </button>
                         </div>
