@@ -1,33 +1,29 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
 import { Star, ShoppingCart } from 'lucide-react';
+import { gamesData } from '../data/gamesData';  // ← IMPORTAR
+
 
 function Store({ onNavigate }) {
     const [games, setGames] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('All');
 
     useEffect(() => {
         loadGames();
     }, [selectedCategory]);
 
-    const loadGames = async () => {
-        try {
-            let query = supabase.from('games').select('*').order('title');
+    const loadGames = () => {
+        setLoading(true);
 
-            if (selectedCategory !== 'All') {
-                query = query.eq('category', selectedCategory);
-            }
+        // ELIMINAR el try-catch con fetch, usar datos locales directamente
+        const filteredGames = selectedCategory === 'All'
+            ? gamesData
+            : gamesData.filter(game => game.category === selectedCategory);
 
-            const { data, error } = await query;
-
-            if (error) throw error;
-            setGames(data || []);
-        } catch (error) {
-            console.error('Error loading games:', error);
-        } finally {
+        setTimeout(() => {
+            setGames(filteredGames);
             setLoading(false);
-        }
+        }, 300);
     };
 
     const categories = ['All', 'Action', 'Adventure', 'RPG', 'Racing', 'Strategy', 'Puzzle', 'Platform'];
@@ -48,8 +44,7 @@ function Store({ onNavigate }) {
                             <button
                                 key={category}
                                 onClick={() => setSelectedCategory(category)}
-                                className={`category-button ${selectedCategory === category ? 'active' : 'inactive'
-                                    }`}
+                                className={`category-button ${selectedCategory === category ? 'active' : 'inactive'}`}
                             >
                                 {category}
                             </button>

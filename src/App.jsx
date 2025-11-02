@@ -14,11 +14,11 @@ import Footer from './components/Footer';
 import EmailVerification from './components/EmailVerification';
 
 function App() {
-
-
   const [currentView, setCurrentView] = useState('home');
   const [selectedGame, setSelectedGame] = useState(null);
   const [verificationToken, setVerificationToken] = useState(null);
+  const [selectedGameId, setSelectedGameId] = useState(null);
+
   useEffect(() => {
     const path = window.location.pathname;
     const match = path.match(/\/verify\/(.+)/);
@@ -30,15 +30,24 @@ function App() {
       setCurrentView('verify');
     }
   }, []);
-  const handleNavigation = (view) => {
+
+  // ✅ ACTUALIZAR ESTA FUNCIÓN
+  const handleNavigation = (view, data = null) => {
+    console.log('🔍 Navigation:', view, 'Data:', data); // Para debuggear
+
     setCurrentView(view);
     setSelectedGame(null);
+
+    // ✅ AGREGAR: Guardar el gameId cuando navegas desde Store
+    if (view === 'game' && data !== null) {
+      console.log('💾 Guardando gameId:', data);
+      setSelectedGameId(data);
+    }
 
     if (currentView === 'verify') {
       window.history.pushState({}, '', '/');
     }
   };
-
 
   const handleGameSelect = (game) => {
     setSelectedGame(game);
@@ -67,6 +76,8 @@ function App() {
         return <Support onNavigate={handleNavigation} />;
       case 'verify':
         return <EmailVerification token={verificationToken} onNavigate={handleNavigation} />;
+      case 'game':
+        return <GameDetail gameId={selectedGameId} onNavigate={handleNavigation} />;
       case 'gameDetail':
         return selectedGame ? (
           <GameDetail game={selectedGame} onNavigate={handleNavigation} />
@@ -85,7 +96,6 @@ function App() {
         <main>{renderView()}</main>
         <Footer onNavigate={handleNavigation} />
       </div>
-
     </AuthProvider>
   );
 }

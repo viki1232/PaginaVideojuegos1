@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { Star, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { Star, ShoppingCart, ArrowLeft, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-
+import { gamesData } from '../data/gamesData';
 
 
 function GameDetail({ gameId, onNavigate }) {
@@ -12,205 +11,394 @@ function GameDetail({ gameId, onNavigate }) {
     const [newRating, setNewRating] = useState(5);
     const [newComment, setNewComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [editingReview, setEditingReview] = useState(null);
+    const [likeProcessing, setLikeProcessing] = useState(false);
     const { user } = useAuth();
 
+    // 🔹 URL de tu backend
+    const API_URL = 'http://localhost:2000/api/reviews';
+
     useEffect(() => {
-        loadGame();
-        loadReviews();
+        if (gameId !== null && gameId !== undefined) {
+            loadGame();
+            loadReviews();
+        }
     }, [gameId]);
 
-    const loadGame = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('games')
-                .select('*')
-                .eq('id', gameId)
-                .maybeSingle();
-
-            if (error) throw error;
-            setGame(data);
-        } catch (error) {
-            console.error('Error loading game:', error);
-        } finally {
+    const loadGame = () => {
+        setLoading(true);
+        const gameData = gamesData.find(g => g.id === gameId);
+        setTimeout(() => {
+            setGame(gameData || null);
             setLoading(false);
-        }
+        }, 300);
     };
 
+    // 🔹 Cargar reviews desde MongoDB
     const loadReviews = async () => {
         try {
-            const { data, error } = await supabase
-                .from('reviews')
-                .select('*, users(username, avatar_url)')
-                .eq('game_id', gameId)
-                .order('created_at', { ascending: false });
+            console.log('📥 Cargando reviews del juego:', gameId);
+            const response = await fetch(`${API_URL}/${gameId}`);
 
-            if (error) throw error;
-            setReviews(data || []);
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Reviews cargados:', data.length);
+                setReviews(data);
+            } else {
+                console.error('❌ Error al cargar reviews:', response.status);
+                setReviews([]);
+            }
         } catch (error) {
-            console.error('Error loading reviews:', error);
+            console.error('❌ Error conectando con el servidor:', error);
+            setReviews([]);
         }
     };
 
+    // 🔹 Crear nuevo review
     const handleSubmitReview = async (e) => {
         e.preventDefault();
+
         if (!user) {
+            alert('⚠️ Debes iniciar sesión para dejar un review');
             onNavigate('login');
             return;
         }
 
         setSubmitting(true);
+
         try {
-            const { error } = await supabase.from('reviews').insert([
-                {
-                    game_id: gameId,
-                    user_id: user.id,
-                    rating: newRating,
-                    comment: newComment,
+            const reviewData = {
+                game_id: gameId,
+                user_id: user.id || user.email || 'guest',
+                username: user.username || user.email?.split('@')[0] || 'Anonymous',
+                rating: newRating,
+                comment: newComment
+            };
+
+            console.log('📤 Enviando review:', reviewData);
+
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                 },
-            ]);
+                body: JSON.stringify(reviewData)
+            });
 
-            if (error) throw error;
-
-            setNewComment('');
-            setNewRating(5);
-            loadReviews();
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Review creado:', data);
+                alert('✅ Review guardado exitosamente!');
+                setNewComment('');
+                setNewRating(5);
+                loadReviews(); // Recargar reviews
+            } else {
+                const error = await response.json();
+                console.error('❌ Error del servidor:', error);
+                alert('❌ Error al guardar review: ' + error.error);
+            }
         } catch (error) {
-            console.error('Error submitting review:', error);
+            console.error('❌ Error de conexión:', error);
+            alert('❌ Error conectando con el servidor');
         } finally {
             setSubmitting(false);
         }
     };
 
+
+
+    // 🔹 Editar review existente
+    const handleEditReview = async (reviewId) => {
+        if (!editingReview) return;
+
+        try {
+            console.log('📝 Actualizando review:', reviewId);
+
+            const response = await fetch(`${API_URL}/${reviewId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    rating: editingReview.rating,
+                    comment: editingReview.comment
+                })
+            });
+
+            if (response.ok) {
+                console.log('✅ Review actualizado');
+                alert('✅ Review actualizado exitosamente!');
+                setEditingReview(null);
+                loadReviews();
+            } else {
+                const error = await response.json();
+                alert('❌ Error al actualizar: ' + error.error);
+            }
+        } catch (error) {
+            console.error('❌ Error actualizando review:', error);
+            alert('❌ Error conectando con el servidor');
+        }
+    };
+
+    // 🔹 Eliminar review
+    const handleDeleteReview = async (reviewId) => {
+        if (!window.confirm('¿Estás seguro de eliminar este review?')) {
+            return;
+        }
+
+        try {
+            console.log('🗑️ Eliminando review:', reviewId);
+
+            const response = await fetch(`${API_URL}/${reviewId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                console.log('✅ Review eliminado');
+                alert('✅ Review eliminado exitosamente!');
+                loadReviews();
+            } else {
+                const error = await response.json();
+                alert('❌ Error al eliminar: ' + error.error);
+            }
+        } catch (error) {
+            console.error('❌ Error eliminando review:', error);
+            alert('❌ Error conectando con el servidor');
+        }
+    };
+    const handlelikes = async (reviewId) => {
+        if (likeProcessing) return;
+        setLikeProcessing(true);
+
+        try {
+            const response = await fetch(`${API_URL}/${reviewId}/likes`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: user.id // ← AGREGA ESTO (temporalmente hardcodeado)
+                })
+
+
+            });
+            if (response.ok) {
+                console.log('✅ Review liked');
+                loadReviews(); // Recargar reviews para actualizar conteo de likes
+            } else {
+                const error = await response.json();
+                console.error('❌ Error al dar like:', error);
+                alert('❌ Error al dar like: ' + error.error);
+            }
+        } catch (error) {
+            console.error('❌ Error conectando con el servidor:', error);
+            alert('❌ Error conectando con el servidor');
+        } finally {
+            setLikeProcessing(false);
+        }
+    };
+
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-                <div className="text-white text-xl">Loading...</div>
+            <div className="loading-container">
+                <div className="loading-text">Loading...</div>
             </div>
         );
     }
 
     if (!game) {
         return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-                <div className="text-white text-xl">Game not found</div>
+            <div className="loading-container">
+                <div className="loading-text">Game not found</div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                <button
-                    onClick={() => onNavigate('store')}
-                    className="flex items-center gap-2 text-purple-400 hover:text-purple-300 mb-6 transition-colors"
-                >
+        <div className="game-detail-container">
+            <div className="game-detail-wrapper">
+                <button onClick={() => onNavigate('store')} className="back-button">
                     <ArrowLeft size={20} />
                     Back to Store
                 </button>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2">
-                        <div className="bg-slate-800 rounded-xl overflow-hidden mb-6">
-                            <div className="aspect-video bg-gradient-to-br from-purple-900/50 to-blue-900/50">
-                                <img
-                                    src={game.image_url}
-                                    alt={game.title}
-                                    className="w-full h-full object-cover"
-                                />
+                <div className="game-detail-grid">
+                    <div className="main-content">
+                        <div className="image-card">
+                            <div className="image-wrapper">
+                                <img src={game.image_url} alt={game.title} className="game-image" />
                             </div>
                         </div>
 
-                        <div className="bg-slate-800 rounded-xl p-8 mb-6">
-                            <h1 className="text-4xl font-bold text-white mb-4">{game.title}</h1>
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="flex items-center gap-2">
-                                    <Star size={24} className="text-yellow-400 fill-yellow-400" />
-                                    <span className="text-xl text-white font-semibold">{game.rating}/5</span>
+                        <div className="info-card">
+                            <h1 className="game-title">{game.title}</h1>
+                            <div className="game-meta">
+                                <div className="rating-container">
+                                    <Star size={24} className="star-filled" />
+                                    <span className="rating-text">{game.rating}/5</span>
                                 </div>
-                                <span className="px-4 py-1 bg-purple-600 text-white rounded-full text-sm font-medium">
-                                    {game.category}
-                                </span>
+                                <span className="category-badge">{game.category}</span>
                             </div>
-                            <p className="text-gray-300 text-lg leading-relaxed">{game.description}</p>
+                            <p className="game-description">{game.description}</p>
                         </div>
 
-                        <div className="bg-slate-800 rounded-xl p-8">
-                            <h2 className="text-2xl font-bold text-white mb-6">Community Reviews</h2>
+                        <div className="reviews-card">
+                            <h2 className="reviews-title">Community Reviews ({reviews.length})</h2>
 
                             {user && (
-                                <form onSubmit={handleSubmitReview} className="mb-8 p-6 bg-slate-900 rounded-lg">
-                                    <h3 className="text-lg font-semibold text-white mb-4">Write a Review</h3>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">Rating</label>
-                                        <div className="flex gap-2">
+                                <form onSubmit={handleSubmitReview} className="review-form">
+                                    <h3 className="form-title">Write a Review</h3>
+                                    <div className="form-group">
+                                        <label className="form-label">Rating</label>
+                                        <div className="star-rating">
                                             {[1, 2, 3, 4, 5].map((rating) => (
                                                 <button
                                                     key={rating}
                                                     type="button"
                                                     onClick={() => setNewRating(rating)}
-                                                    className="focus:outline-none"
+                                                    className="star-button"
                                                 >
                                                     <Star
                                                         size={32}
-                                                        className={`transition-colors ${rating <= newRating
-                                                            ? 'text-yellow-400 fill-yellow-400'
-                                                            : 'text-gray-600'
-                                                            }`}
+                                                        className={rating <= newRating ? 'star-active' : 'star-inactive'}
                                                     />
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">Comment</label>
+                                    <div className="form-group">
+                                        <label className="form-label">Comment</label>
                                         <textarea
                                             value={newComment}
                                             onChange={(e) => setNewComment(e.target.value)}
-                                            className="w-full px-4 py-3 bg-slate-800 border border-purple-900/30 rounded-lg text-white focus:outline-none focus:border-purple-600 transition-colors"
+                                            className="comment-textarea"
                                             rows={4}
                                             placeholder="Share your thoughts about this game..."
                                             required
+                                            minLength={10}
                                         />
                                     </div>
-                                    <button
-                                        type="submit"
-                                        disabled={submitting}
-                                        className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-all"
-                                    >
+                                    <button type="submit" disabled={submitting} className="submit-button">
                                         {submitting ? 'Submitting...' : 'Submit Review'}
                                     </button>
                                 </form>
                             )}
 
-                            <div className="space-y-4">
+                            {!user && (
+                                <div className="login-prompt">
+                                    <p>Inicia sesión para dejar un review</p>
+                                    <button onClick={() => onNavigate('login')} className="login-button">
+                                        Iniciar Sesión
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="reviews-list">
                                 {reviews.map((review) => (
-                                    <div key={review.id} className="p-6 bg-slate-900 rounded-lg">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                                {review.users?.username?.charAt(0).toUpperCase() || 'U'}
-                                            </div>
-                                            <div>
-                                                <p className="text-white font-semibold">{review.users?.username || 'User'}</p>
-                                                <div className="flex items-center gap-1">
-                                                    {[...Array(5)].map((_, i) => (
-                                                        <Star
-                                                            key={i}
-                                                            size={14}
-                                                            className={`${i < review.rating
-                                                                ? 'text-yellow-400 fill-yellow-400'
-                                                                : 'text-gray-600'
-                                                                }`}
-                                                        />
-                                                    ))}
+                                    <div key={review._id} className="review-item">
+                                        {editingReview && editingReview._id === review._id ? (
+                                            // 🔹 Modo edición
+                                            <div className="review-edit-mode">
+                                                <div className="form-group">
+                                                    <label className="form-label">Rating</label>
+                                                    <div className="star-rating">
+                                                        {[1, 2, 3, 4, 5].map((rating) => (
+                                                            <button
+                                                                key={rating}
+                                                                type="button"
+                                                                onClick={() => setEditingReview({
+                                                                    ...editingReview,
+                                                                    rating
+                                                                })}
+                                                                className="star-button"
+                                                            >
+                                                                <Star
+                                                                    size={24}
+                                                                    className={rating <= editingReview.rating ? 'star-active' : 'star-inactive'}
+                                                                />
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <textarea
+                                                    value={editingReview.comment}
+                                                    onChange={(e) => setEditingReview({
+                                                        ...editingReview,
+                                                        comment: e.target.value
+                                                    })}
+                                                    className="comment-textarea"
+                                                    rows={3}
+                                                />
+                                                <div className="edit-actions">
+                                                    <button
+                                                        onClick={() => handleEditReview(review._id)}
+                                                        className="save-button"
+                                                    >
+                                                        Guardar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setEditingReview(null)}
+                                                        className="cancel-button"
+                                                    >
+                                                        Cancelar
+                                                    </button>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <p className="text-gray-300">{review.comment}</p>
+                                        ) : (
+                                            // 🔹 Modo visualización
+                                            <>
+                                                <div className="review-header">
+                                                    <div className="user-avatar">
+                                                        {review.username?.charAt(0).toUpperCase() || 'U'}
+                                                    </div>
+                                                    <div className="review-user-info">
+                                                        <p className="username">{review.username || 'User'}</p>
+                                                        <div className="review-stars">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <Star
+                                                                    key={i}
+                                                                    size={14}
+                                                                    className={i < review.rating ? 'star-filled-small' : 'star-empty-small'}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                        <p className="review-date">
+                                                            {new Date(review.created_at).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                    {user && user.id === review.user_id && (
+                                                        <div className="review-actions">
+                                                            <button
+                                                                onClick={() => setEditingReview(review)}
+                                                                className="action-button edit-btn"
+                                                                title="Editar"
+                                                            >
+                                                                <Edit2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteReview(review._id)}
+                                                                className="action-button delete-btn"
+                                                                title="Eliminar"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handlelikes(review._id)}
+                                                                className='Buttonlike'
+                                                                title='like'>
+                                                                👍 {review.likes || 0}
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <p className="review-comment">{review.comment}</p>
+                                            </>
+                                        )}
                                     </div>
                                 ))}
 
                                 {reviews.length === 0 && (
-                                    <p className="text-center text-gray-400 py-8">
+                                    <p className="no-reviews">
                                         No reviews yet. Be the first to review this game!
                                     </p>
                                 )}
@@ -218,14 +406,14 @@ function GameDetail({ gameId, onNavigate }) {
                         </div>
                     </div>
 
-                    <div className="lg:col-span-1">
-                        <div className="bg-slate-800 rounded-xl p-8 sticky top-24">
-                            <div className="text-4xl font-bold text-white mb-6">${game.price}</div>
-                            <button className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 mb-4">
+                    <div className="sidebar">
+                        <div className="purchase-card">
+                            <div className="price">${game.price}</div>
+                            <button className="purchase-button">
                                 <ShoppingCart size={20} />
                                 Purchase
                             </button>
-                            <button className="w-full py-4 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-all">
+                            <button className="wishlist-button">
                                 Add to Wishlist
                             </button>
                         </div>
@@ -235,4 +423,5 @@ function GameDetail({ gameId, onNavigate }) {
         </div>
     );
 }
+
 export default GameDetail;

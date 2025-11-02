@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
+import reviewRoutes from './routes/reviewRoutes.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.get('/', (req, res) => {
         }
     });
 });
+app.use('/api/reviews', reviewRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 2000;
