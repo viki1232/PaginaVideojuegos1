@@ -7,23 +7,77 @@ function Store({ onNavigate }) {
     const [games, setGames] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('All');
+    const [allStats, setAllStats] = useState({});
 
+    const API_URL = 'http://localhost:2000/api/reviews';
     useEffect(() => {
         loadGames();
+
+
     }, [selectedCategory]);
 
-    const loadGames = () => {
+    const loadGames = async () => {  // ✅ Hacer async
         setLoading(true);
 
-        // ELIMINAR el try-catch con fetch, usar datos locales directamente
         const filteredGames = selectedCategory === 'All'
             ? gamesData
             : gamesData.filter(game => game.category === selectedCategory);
 
-        setTimeout(() => {
-            setGames(filteredGames);
-            setLoading(false);
-        }, 300);
+        setGames(filteredGames);
+
+        // ✅ Cargar stats DESPUÉS de tener los juegos
+        await loadAllStats(filteredGames);
+
+        setLoading(false);
+    };
+    const loadAllStats = async (gamesToLoad) => {
+        console.log('🎮 Juegos a cargar stats:', gamesToLoad.length);
+
+        try {
+            const statsPromises = gamesToLoad.map(async (game) => {
+                console.log(`📡 Haciendo fetch para juego ${game.id}`);
+
+                try {
+                    const response = await fetch(`${API_URL}/${game.id}`);
+                    console.log(`📨 Response para juego ${game.id}:`, response.status);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log(`✅ Data recibida para juego ${game.id}:`, data);
+                        return {
+                            gameId: game.id,
+                            stats: data.stats
+                        };
+                    }
+
+                    return {
+                        gameId: game.id,
+                        stats: { average_rating: 0, total_reviews: 0 }
+                    };
+
+                } catch (error) {
+                    console.error(`❌ Error en juego ${game.id}:`, error);
+                    return {
+                        gameId: game.id,
+                        stats: { average_rating: 0, total_reviews: 0 }
+                    };
+                }
+            });
+
+            const results = await Promise.all(statsPromises);
+            console.log('📊 Results completos:', results);
+
+            const statsObject = {};
+            results.forEach(result => {
+                statsObject[result.gameId] = result.stats;
+            });
+
+            console.log('🎯 Stats finales (allStats):', statsObject);
+            setAllStats(statsObject);
+
+        } catch (error) {
+            console.error('💥 Error general:', error);
+        }
     };
 
     const categories = ['All', 'Action', 'Adventure', 'RPG', 'Racing', 'Strategy', 'Puzzle', 'Platform'];
@@ -87,13 +141,19 @@ function Store({ onNavigate }) {
                                     <div className="game-meta">
                                         <div className="game-rating">
                                             <Star className="star-icon" />
-                                            <span className="rating-text">{game.rating}/5</span>
+                                            <span className="rating-text">{allStats[game.id]?.average_rating > 0
+                                                ? allStats[game.id].average_rating
+                                                : 'NA'
+                                            }/5</span>
                                         </div>
                                         <span className="game-category">{game.category}</span>
                                     </div>
                                     <div className="game-footer">
                                         <span className="game-price">${game.price}</span>
-                                        <button className="add-to-library-button">
+                                        <button
+                                            className="add-to-library-button"
+                                            onClick={() => onAddToLibrary(game)}
+                                        >
                                             <ShoppingCart className="cart-icon" />
                                             Add to Library
                                         </button>

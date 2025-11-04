@@ -4,29 +4,84 @@ import { ArrowRight, Star } from 'lucide-react';
 function Home({ onNavigate }) {
     const [games, setGames] = useState([]);
     const [loading, setLoading] = useState(true);
-
+    const [allStats, setAllStats] = useState({});
+    const API_URL = 'http://localhost:2000/api/reviews';
     useEffect(() => {
         loadGames();
+
     }, []);
 
     const loadGames = async () => {
         try {
             // Simular datos de juegos para el ejemplo
             const mockGames = [
-                { id: 1, title: 'Epic Adventure', rating: 4.8, category: 'Action', image_url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400' },
-                { id: 2, title: 'Space Warriors', rating: 4.5, category: 'Shooter', image_url: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400' },
-                { id: 3, title: 'Dragon Quest', rating: 4.9, category: 'RPG', image_url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400' },
-                { id: 4, title: 'Racing Legends', rating: 4.6, category: 'Racing', image_url: 'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=400' },
-                { id: 5, title: 'Mystery Manor', rating: 4.7, category: 'Puzzle', image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400' }
+                { id: 1, title: 'Epic Adventure', category: 'Action', image_url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400' },
+                { id: 2, title: 'Space Warriors', category: 'Shooter', image_url: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400' },
+                { id: 3, title: 'Dragon Quest', category: 'RPG', image_url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400' },
+                { id: 4, title: 'Racing Legends', category: 'Racing', image_url: 'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=400' },
+                { id: 5, title: 'Mystery Manor', category: 'Puzzle', image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400' }
             ];
 
-            setTimeout(() => {
-                setGames(mockGames);
-                setLoading(false);
-            }, 1000);
+
+
+
+            setGames(mockGames);
+
+
+            await loadAllStats(mockGames);
+            setLoading(false);
         } catch (error) {
             console.error('Error loading games:', error);
             setLoading(false);
+        }
+    };
+    const loadAllStats = async (gamesToLoad) => {
+        console.log('🎮 Juegos a cargar stats:', gamesToLoad.length);
+
+        try {
+            const statsPromises = gamesToLoad.map(async (game) => {
+                console.log(`📡 Haciendo fetch para juego ${game.id}`);
+
+                try {
+                    const response = await fetch(`${API_URL}/${game.id}`);
+                    console.log(`📨 Response para juego ${game.id}:`, response.status);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log(`✅ Data recibida para juego ${game.id}:`, data);
+                        return {
+                            gameId: game.id,
+                            stats: data.stats
+                        };
+                    }
+
+                    return {
+                        gameId: game.id,
+                        stats: { average_rating: 0, total_reviews: 0 }
+                    };
+
+                } catch (error) {
+                    console.error(`❌ Error en juego ${game.id}:`, error);
+                    return {
+                        gameId: game.id,
+                        stats: { average_rating: 0, total_reviews: 0 }
+                    };
+                }
+            });
+
+            const results = await Promise.all(statsPromises);
+            console.log('📊 Results completos:', results);
+
+            const statsObject = {};
+            results.forEach(result => {
+                statsObject[result.gameId] = result.stats;
+            });
+
+            console.log('🎯 Stats finales (allStats):', statsObject);
+            setAllStats(statsObject);
+
+        } catch (error) {
+            console.error('💥 Error general:', error);
         }
     };
 
@@ -86,7 +141,11 @@ function Home({ onNavigate }) {
                                         <div className="game-meta">
                                             <div className="game-rating-display">
                                                 <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                                                <span className="rating-text">{game.rating}</span>
+                                                <span className="rating-text">{allStats[game.id]?.average_rating > 0
+                                                    ? allStats[game.id].average_rating
+                                                    : 'NA'
+                                                }/5
+                                                </span>
                                             </div>
                                             <span className="category-text">{game.category}</span>
                                         </div>
