@@ -1,200 +1,166 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { MessageSquare, Send } from 'lucide-react';
+import { MessageSquare, Send, ThumbsUp, Trash2, MessageCircle } from 'lucide-react';
 
 function Community({ onNavigate }) {
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [posts, setPosts] = useState([]);
+  const [newPost, setNewPost] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
   const { user } = useAuth();
 
-  // Mensajes de ejemplo
-  const mockMessages = [
-    {
-      id: 1,
-      user_id: 1,
-      message: "Just finished Cyber Warriors 2077! The graphics are absolutely mind-blowing. Anyone else playing this masterpiece?",
-      created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
-      users: {
-        username: "CyberGamer",
-        avatar_url: null
-      },
-      games: {
-        title: "Cyber Warriors 2077"
-      }
-    },
-    {
-      id: 2,
-      user_id: 2,
-      message: "Looking for co-op partners for Dragon's Legacy! I'm level 45, mainly playing evenings EST. Hit me up!",
-      created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-      users: {
-        username: "DragonSlayer",
-        avatar_url: null
-      },
-      games: {
-        title: "Dragon's Legacy"
-      }
-    },
-    {
-      id: 3,
-      user_id: 3,
-      message: "The new update for Speed Legends added so many great tracks! The Tokyo night circuit is my favorite so far.",
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-      users: {
-        username: "RacerPro",
-        avatar_url: null
-      },
-      games: {
-        title: "Speed Legends"
-      }
-    },
-    {
-      id: 4,
-      user_id: 4,
-      message: "Does anyone have tips for the final boss in Dark Souls Reborn? I've been stuck for days! 😅",
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-      users: {
-        username: "SoulsVeteran",
-        avatar_url: null
-      },
-      games: {
-        title: "Dark Souls Reborn"
-      }
-    },
-    {
-      id: 5,
-      user_id: 5,
-      message: "Fantasy Quest is on sale! If you haven't played it yet, now's the perfect time. It's one of the best RPGs I've ever experienced.",
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(), // 8 hours ago
-      users: {
-        username: "RPGMaster",
-        avatar_url: null
-      },
-      games: {
-        title: "Fantasy Quest"
-      }
-    },
-    {
-      id: 6,
-      user_id: 6,
-      message: "Just beat all 500 levels in Mind Bender! My brain hurts but it feels so good. The last puzzle was insane! 🧠",
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
-      users: {
-        username: "PuzzleGenius",
-        avatar_url: null
-      },
-      games: {
-        title: "Mind Bender"
-      }
-    },
-    {
-      id: 7,
-      user_id: 7,
-      message: "Empire Builder is consuming all my free time. One more turn... said 3 hours ago. Send help! 😂",
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-      users: {
-        username: "StrategyKing",
-        avatar_url: null
-      },
-      games: {
-        title: "Empire Builder"
-      }
-    }
-  ];
+  const API_URL = 'http://localhost:2000/api/comunity';
 
   useEffect(() => {
-    loadMessages();
+    loadPosts();
   }, []);
 
-  const loadMessages = async () => {
+  // ✅ Cargar posts desde MongoDB
+  const loadPosts = async () => {
     setLoading(true);
-
     try {
-      // Intentar cargar desde API/MongoDB
-      const response = await fetch('/api/community/messages');
+      const response = await fetch(API_URL);
       if (response.ok) {
         const data = await response.json();
-        setMessages(data);
+        console.log('✅ Posts cargados:', data);
+        setPosts(data.posts || []);
       } else {
-        // Usar datos mock si falla
-        setMessages(mockMessages);
+        console.error('❌ Error al cargar posts');
+        setPosts([]);
       }
     } catch (error) {
-      console.error('Error loading messages:', error);
-      // Usar datos mock en caso de error
-      setMessages(mockMessages);
+      console.error('❌ Error:', error);
+      setPosts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmitMessage = async (e) => {
+  // ✅ Crear nuevo post
+  const handleSubmitPost = async (e) => {
     e.preventDefault();
     if (!user) {
       onNavigate('login');
       return;
     }
 
-    if (!newMessage.trim()) return;
+    if (!newPost.trim()) return;
 
     setSubmitting(true);
 
     try {
-      // Intentar enviar a API/MongoDB
-      const response = await fetch('/api/community/messages', {
+      const response = await fetch(API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: user.id,
-          message: newMessage,
-        }),
+          username: user.username || user.email?.split('@')[0] || 'Anonymous',
+          comment: newPost
+        })
       });
 
       if (response.ok) {
-        // Recargar mensajes si se guardó exitosamente
-        await loadMessages();
+        console.log('✅ Post creado');
+        setNewPost('');
+        await loadPosts();
+        alert('✅ Post publicado!');
       } else {
-        // Agregar mensaje localmente si falla la API
-        const newMsg = {
-          id: messages.length + 1,
-          user_id: user.id,
-          message: newMessage,
-          created_at: new Date().toISOString(),
-          users: {
-            username: user.username || user.email?.split('@')[0] || 'You',
-            avatar_url: null
-          },
-          games: null
-        };
-        setMessages([newMsg, ...messages]);
+        const error = await response.json();
+        alert('❌ Error: ' + error.error);
       }
-
-      setNewMessage('');
-      alert('✅ Message posted successfully!');
     } catch (error) {
-      console.error('Error submitting message:', error);
-
-      // Agregar mensaje localmente en caso de error
-      const newMsg = {
-        id: messages.length + 1,
-        user_id: user.id,
-        message: newMessage,
-        created_at: new Date().toISOString(),
-        users: {
-          username: user.username || user.email?.split('@')[0] || 'You',
-          avatar_url: null
-        },
-        games: null
-      };
-      setMessages([newMsg, ...messages]);
-      setNewMessage('');
-      alert('✅ Message posted successfully!');
+      console.error('❌ Error:', error);
+      alert('❌ Error al publicar');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // ✅ Dar/quitar like
+  const handleLike = async (postId) => {
+    if (!user) {
+      onNavigate('login');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/${postId}/like`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id })
+      });
+
+      if (response.ok) {
+        console.log('✅ Like actualizado');
+        await loadPosts();
+      }
+    } catch (error) {
+      console.error('❌ Error:', error);
+    }
+  };
+
+  // ✅ Agregar respuesta
+  const handleAddReply = async (postId) => {
+    if (!replyText.trim()) return;
+
+    try {
+      const response = await fetch(`${API_URL}/${postId}/replies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          username: user.username || user.email?.split('@')[0] || 'Anonymous',
+          comment: replyText
+        })
+      });
+
+      if (response.ok) {
+        console.log('✅ Respuesta agregada');
+        setReplyText('');
+        setReplyingTo(null);
+        await loadPosts();
+      }
+    } catch (error) {
+      console.error('❌ Error:', error);
+    }
+  };
+
+  // ✅ Eliminar post
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('¿Eliminar este post?')) return;
+
+    try {
+      const response = await fetch(`${API_URL}/${postId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        console.log('✅ Post eliminado');
+        await loadPosts();
+        alert('✅ Post eliminado');
+      }
+    } catch (error) {
+      console.error('❌ Error:', error);
+    }
+  };
+
+  // ✅ Eliminar respuesta
+  const handleDeleteReply = async (postId, replyId) => {
+    if (!window.confirm('¿Eliminar esta respuesta?')) return;
+
+    try {
+      const response = await fetch(`${API_URL}/${postId}/replies/${replyId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        console.log('✅ Respuesta eliminada');
+        await loadPosts();
+      }
+    } catch (error) {
+      console.error('❌ Error:', error);
     }
   };
 
@@ -206,10 +172,10 @@ function Community({ onNavigate }) {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return 'Ahora';
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
     return date.toLocaleDateString();
   };
 
@@ -226,25 +192,30 @@ function Community({ onNavigate }) {
       </div>
 
       <div className="community-content">
+        {/* ✅ Formulario para crear post */}
         {user && (
-          <form onSubmit={handleSubmitMessage} className="message-form">
+          <form onSubmit={handleSubmitPost} className="message-form">
             <div className="message-form-container">
               <div className="user-avatar-large">
-                {user.email?.charAt(0).toUpperCase() || 'U'}
+                {user.username?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div className="message-form-input-container">
                 <textarea
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  value={newPost}
+                  onChange={(e) => setNewPost(e.target.value)}
                   className="message-textarea"
                   rows={3}
                   placeholder="Share your thoughts with the community..."
+                  maxLength={500}
                   required
                 />
                 <div className="message-form-actions">
+                  <span style={{ fontSize: '12px', color: '#666' }}>
+                    {newPost.length}/500
+                  </span>
                   <button
                     type="submit"
-                    disabled={submitting || !newMessage.trim()}
+                    disabled={submitting || !newPost.trim()}
                     className="post-button"
                   >
                     <Send size={18} />
@@ -259,15 +230,13 @@ function Community({ onNavigate }) {
         {!user && (
           <div className="signin-prompt">
             <p className="signin-prompt-text">Sign in to join the conversation</p>
-            <button
-              onClick={() => onNavigate('login')}
-              className="signin-button"
-            >
+            <button onClick={() => onNavigate('login')} className="signin-button">
               Sign In
             </button>
           </div>
         )}
 
+        {/* ✅ Lista de posts */}
         {loading ? (
           <div className="messages-loading">
             {[...Array(5)].map((_, i) => (
@@ -276,36 +245,105 @@ function Community({ onNavigate }) {
           </div>
         ) : (
           <div className="messages-list">
-            {messages.map((message) => (
-              <div key={message.id} className="message-card">
+            {posts.map((post) => (
+              <div key={post._id} className="message-card">
                 <div className="message-content">
                   <div className="message-avatar">
-                    {message.users?.username?.charAt(0).toUpperCase() || 'U'}
+                    {post.username?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div className="message-body">
                     <div className="message-header">
-                      <span className="message-username">
-                        {message.users?.username || 'User'}
-                      </span>
-                      <span className="message-time">
-                        {formatDate(message.created_at)}
-                      </span>
-                      {message.games && (
-                        <span className="message-game">
-                          about {message.games.title}
-                        </span>
+                      <span className="message-username">{post.username || 'User'}</span>
+                      <span className="message-time">{formatDate(post.created_at)}</span>
+                      {user && user.id === post.user_id && (
+                        <button
+                          onClick={() => handleDeletePost(post._id)}
+                          className="delete-btn"
+                          style={{ marginLeft: 'auto' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       )}
                     </div>
-                    <p className="message-text">{message.message}</p>
+                    <p className="message-text">{post.comment}</p>
+
+                    {/* ✅ Acciones del post */}
+                    <div className="post-actions">
+                      <button
+                        onClick={() => handleLike(post._id)}
+                        className="action-btn"
+                        disabled={!user}
+                      >
+                        <ThumbsUp size={16} />
+                        {post.likes || 0}
+                      </button>
+                      <button
+                        onClick={() => setReplyingTo(replyingTo === post._id ? null : post._id)}
+                        className="action-btn"
+                        disabled={!user}
+                      >
+                        <MessageCircle size={16} />
+                        {post.replies?.length || 0}
+                      </button>
+                    </div>
+
+                    {/* ✅ Formulario de respuesta */}
+                    {replyingTo === post._id && (
+                      <div className="reply-form">
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Write a reply..."
+                          rows={2}
+                          maxLength={300}
+                        />
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          <button onClick={() => handleAddReply(post._id)} className="btn-primary">
+                            Reply
+                          </button>
+                          <button onClick={() => setReplyingTo(null)} className="btn-secondary">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ✅ Lista de respuestas */}
+                    {post.replies && post.replies.length > 0 && (
+                      <div className="replies-list">
+                        {post.replies.map((reply) => (
+                          <div key={reply._id} className="reply-item">
+                            <div className="reply-avatar">
+                              {reply.username?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                            <div className="reply-content">
+                              <div className="reply-header">
+                                <span className="reply-username">{reply.username}</span>
+                                <span className="reply-time">{formatDate(reply.created_at)}</span>
+                                {user && user.id === reply.user_id && (
+                                  <button
+                                    onClick={() => handleDeleteReply(post._id, reply._id)}
+                                    className="delete-btn-small"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                              </div>
+                              <p className="reply-text">{reply.comment}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             ))}
 
-            {messages.length === 0 && (
+            {posts.length === 0 && (
               <div className="empty-community">
                 <MessageSquare size={48} className="empty-icon" />
-                <p className="empty-text">No messages yet. Start the conversation!</p>
+                <p className="empty-text">No posts yet. Start the conversation!</p>
               </div>
             )}
           </div>

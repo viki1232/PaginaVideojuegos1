@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import perfilRoutes from './routes/perfilRoutes.js';
+import comunityRoutes from './routes/comunityRoutes.js';
 
 dotenv.config();
 
@@ -42,6 +43,7 @@ app.get('/', (req, res) => {
     });
 });
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/comunity', comunityRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 2000;
