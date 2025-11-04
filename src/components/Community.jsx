@@ -316,11 +316,21 @@ function Community({ onNavigate }) {
                             <div className="reply-avatar">
                               {reply.username?.charAt(0).toUpperCase() || 'U'}
                             </div>
+
+                            <button
+                              onClick={() => handleLike(post._id)}
+                              className="action-btn"
+                              disabled={!user}
+                            >
+                              <ThumbsUp size={16} />
+                              {post.likes || 0}
+                            </button>
                             <div className="reply-content">
                               <div className="reply-header">
                                 <span className="reply-username">{reply.username}</span>
                                 <span className="reply-time">{formatDate(reply.created_at)}</span>
                                 {user && user.id === reply.user_id && (
+
                                   <button
                                     onClick={() => handleDeleteReply(post._id, reply._id)}
                                     className="delete-btn-small"
