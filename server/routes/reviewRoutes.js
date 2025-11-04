@@ -5,12 +5,12 @@ import {
     getAllReviews,
     deleteReview,
     editReview,
-    likes// ← Agregar import
+    likes,// ← Agregar import
 } from '../controllers/reviewController.js';
 
 const router = express.Router();
 
-router.post('/', createReview);
+router.post('/', createReview); // ← Agregar ruta para likes
 router.get('/:gameId', getReviewsByGameId);
 router.get('/', getAllReviews);
 router.put('/:id', editReview);  // ← Agregar ruta PUT

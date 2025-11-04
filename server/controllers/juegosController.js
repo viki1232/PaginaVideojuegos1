@@ -14,7 +14,6 @@ export const createJuego = async (req, res) => {
             });
         }
 
-        // ✅ Verificar si el juego ya existe en el perfil del usuario
         const existingGame = await perfil.findOne({
             game_id: parseInt(game_id),
             user_id: user_id
@@ -27,7 +26,7 @@ export const createJuego = async (req, res) => {
             });
         }
 
-        // Crear el nuevo juego en el perfil
+
         const newGame = new perfil({
             game_id: parseInt(game_id),
             user_id,
@@ -103,6 +102,108 @@ export const deleteUserGame = async (req, res) => {
         res.status(500).json({
             error: 'Error al eliminar juego',
             details: error.message
+        });
+    }
+};
+
+export const marcarCompletado = async (req, res) => {
+    try {
+        const { user_id, game_id } = req.params;
+        const { completado } = req.body; // true o false
+
+        const juego = await perfil.findOneAndUpdate(
+            {
+                user_id,
+                game_id: parseInt(game_id)
+            },
+            {
+                completado: completado,
+                fecha_completado: completado ? new Date() : null
+            },
+            { new: true } // Retorna el documento actualizado
+        );
+
+        if (!juego) {
+            return res.status(404).json({
+                error: 'Juego no encontrado en tu biblioteca'
+            });
+        }
+
+        res.status(200).json({
+            message: completado ? 'Juego marcado como completado' : 'Juego marcado como no completado',
+            game: juego
+        });
+
+    } catch (error) {
+        console.error('❌ Error al marcar completado:', error);
+        res.status(500).json({
+            error: 'Error al actualizar el juego',
+            details: error.message
+        });
+    }
+};
+
+// ✅ Agregar horas jugadas
+export const agregarHoras = async (req, res) => {
+    try {
+        const { user_id, game_id } = req.params;
+        const { horas } = req.body;
+
+        if (!horas || horas <= 0) {
+            return res.status(400).json({
+                error: 'Debes proporcionar un número de horas válido'
+            });
+        }
+
+        const juego = await perfil.findOneAndUpdate(
+            {
+                user_id,
+                game_id: parseInt(game_id)
+            },
+            {
+                $inc: { horas_jugadas: parseFloat(horas) } // Incrementa las horas
+            },
+            { new: true }
+        );
+
+        if (!juego) {
+            return res.status(404).json({
+                error: 'Juego no encontrado en tu biblioteca'
+            });
+        }
+
+        res.status(200).json({
+            message: 'Horas agregadas exitosamente',
+            game: juego
+        });
+
+    } catch (error) {
+        console.error('❌ Error al agregar horas:', error);
+        res.status(500).json({
+            error: 'Error al agregar horas',
+            details: error.message
+        });
+    }
+};
+
+// ✅ Actualizar juegocompleto para incluir filtros
+export const juegocompleto = async (req, res) => {
+    try {
+        const { user_id } = req.query; // Opcional: filtrar por usuario
+
+        const filtro = user_id ? { user_id } : {};
+        const juegos = await perfil.find(filtro).sort({ added_at: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: juegos.length,
+            juegos: juegos
+        });
+    } catch (error) {
+        console.error('❌ Error al obtener juegos:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener los juegos'
         });
     }
 };

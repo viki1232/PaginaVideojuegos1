@@ -4,7 +4,7 @@ import { Clock, Trophy, Star, X } from 'lucide-react';
 
 const Profile = ({ onNavigate }) => {
     const { user, profile } = useAuth();
-    const [userGames, setUserGames] = useState([]); // ✅ Estado local para juegos
+    const [userGames, setUserGames] = useState([]);
     const [stats, setStats] = useState(null);
     const [recentActivity, setRecentActivity] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -19,10 +19,13 @@ const Profile = ({ onNavigate }) => {
     // ✅ Actualizar stats cuando cambien los juegos
     useEffect(() => {
         if (userGames.length > 0) {
+            const completados = userGames.filter(game => game.completado).length;
+            const totalHoras = userGames.reduce((sum, game) => sum + (game.horas_jugadas || 0), 0);
+
             setStats({
                 total_games: userGames.length,
-                completed_games: stats?.completed_games || 0,
-                total_hours: stats?.total_hours || 0
+                completed_games: completados,
+                total_hours: totalHoras
             });
         }
     }, [userGames]);
@@ -62,6 +65,113 @@ const Profile = ({ onNavigate }) => {
         }
     };
 
+    // ✅ Marcar como completado
+    const toggleCompletado = async (gameId, currentStatus) => {
+        console.log('🔄 toggleCompletado llamado');
+        console.log('📝 Datos:', {
+            gameId,
+            tipo: typeof gameId,
+            currentStatus,
+            userId: user.id
+        });
+
+        try {
+            const url = `http://localhost:2000/api/perfil/juego/${user.id}/${gameId}/completado`;
+            console.log('📍 URL completa:', url);
+
+            const body = { completado: !currentStatus };
+            console.log('📦 Body a enviar:', body);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            console.log('📨 Response status:', response.status);
+            console.log('📨 Response ok:', response.ok);
+
+            const data = await response.json();
+            console.log('📨 Data recibida:', data);
+
+            if (response.ok) {
+                console.log('✅ Respuesta OK, actualizando estado...');
+
+                // Actualizar el juego en el estado local
+                setUserGames(prevGames => {
+                    const updated = prevGames.map(game =>
+                        game.game_id === gameId
+                            ? { ...game, completado: data.game.completado }
+                            : game
+                    );
+                    console.log('✅ Estado actualizado:', updated);
+                    return updated;
+                });
+            } else {
+                console.error('❌ Error del servidor:', data);
+                alert('Error al actualizar: ' + data.error);
+            }
+        } catch (error) {
+            console.error('❌ Error completo:', error);
+            alert('Error al actualizar el juego: ' + error.message);
+        }
+    };
+
+    // ✅ Agregar horas - VERSIÓN CON LOGS DETALLADOS
+    const agregarHoras = async (gameId, horas) => {
+        console.log('⏰ agregarHoras llamado');
+        console.log('📝 Datos:', { gameId, horas, userId: user.id });
+
+        const horasNum = parseFloat(horas);
+
+        if (isNaN(horasNum) || horasNum <= 0) {
+            alert('Ingresa un número válido');
+            return false;
+        }
+
+        try {
+            const url = `http://localhost:2000/api/perfil/juego/${user.id}/${gameId}/horas`;
+            console.log('📍 URL completa:', url);
+
+            const body = { horas: horasNum };
+            console.log('📦 Body a enviar:', body);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            console.log('📨 Response status:', response.status);
+
+            const data = await response.json();
+            console.log('📨 Data recibida:', data);
+
+            if (response.ok) {
+                console.log('✅ Horas agregadas correctamente');
+
+                // Actualizar el juego en el estado local
+                setUserGames(prevGames => {
+                    const updated = prevGames.map(game =>
+                        game.game_id === gameId
+                            ? { ...game, horas_jugadas: data.game.horas_jugadas }
+                            : game
+                    );
+                    console.log('✅ Estado actualizado con nuevas horas');
+                    return updated;
+                });
+                return true;
+            } else {
+                console.error('❌ Error del servidor:', data);
+                alert('Error: ' + data.error);
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Error completo:', error);
+            alert('Error al agregar horas: ' + error.message);
+            return false;
+        }
+    };
     if (!user) {
         return (
             <div className="profile-page">
@@ -124,23 +234,15 @@ const Profile = ({ onNavigate }) => {
                         ) : userGames && userGames.length > 0 ? (
                             <div className="library-grid">
                                 {userGames.map((game) => (
-                                    <div key={game.game_id} className="game-card">
-                                        <button
-                                            className="remove-game-btn"
-                                            onClick={() => removeGame(game.game_id)}
-                                            title="Remove from library"
-                                        >
-                                            <X size={16} />
-                                        </button>
-                                        <img
-                                            src={game.game_image}
-                                            alt={game.game_title}
-                                            onClick={() => onNavigate('game', game.game_id)}
-                                            style={{ cursor: 'pointer' }}
-                                        />
-                                        <h3>{game.game_title}</h3>
-                                        <p>${game.game_price}</p>
-                                    </div>
+                                    <GameCard
+                                        key={game.game_id}
+                                        game={game}
+                                        userId={user.id}
+                                        onRemove={removeGame}
+                                        onToggleCompletado={toggleCompletado}
+                                        onAgregarHoras={agregarHoras}
+                                        onNavigate={onNavigate}
+                                    />
                                 ))}
                             </div>
                         ) : (
@@ -185,6 +287,102 @@ const Profile = ({ onNavigate }) => {
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+};
+
+// ✅ Componente separado para cada tarjeta de juego
+const GameCard = ({ game, userId, onRemove, onToggleCompletado, onAgregarHoras, onNavigate }) => {
+    const [mostrarInput, setMostrarInput] = useState(false);
+    const [horasInput, setHorasInput] = useState('');
+
+    console.log('🎮 GameCard renderizado para:', game.game_title, {
+        game_id: game.game_id,
+        completado: game.completado,
+        horas_jugadas: game.horas_jugadas
+    });
+
+    const handleAgregarHoras = async () => {
+        console.log('➕ handleAgregarHoras llamado');
+        const success = await onAgregarHoras(game.game_id, horasInput);
+        if (success) {
+            setHorasInput('');
+            setMostrarInput(false);
+        }
+    };
+
+    const handleCheckboxChange = () => {
+        console.log('☑️ Checkbox clickeado para:', game.game_title);
+        console.log('📝 Estado actual completado:', game.completado);
+        onToggleCompletado(game.game_id, game.completado);
+    };
+
+    return (
+        <div className={`game-card ${game.completado ? 'completado' : ''}`}>
+            <button
+                className="remove-game-btn"
+                onClick={() => onRemove(game.game_id)}
+                title="Remove from library"
+            >
+                <X size={16} />
+            </button>
+
+            <img
+                src={game.game_image}
+                alt={game.game_title}
+                onClick={() => onNavigate('game', game.game_id)}
+                style={{ cursor: 'pointer' }}
+            />
+
+            <div className="game-info">
+                <h3>{game.game_title}</h3>
+                <p className="game-price">${game.game_price}</p>
+            </div>
+
+            {/* ✅ Estado de completado */}
+            <div className="game-status">
+                <label className="checkbox-completado">
+                    <input
+                        type="checkbox"
+                        checked={game.completado || false}
+                        onChange={handleCheckboxChange}
+                    />
+                    <span>Completado {game.completado && '✓'}</span>
+                </label>
+            </div>
+
+            {/* ✅ Horas jugadas */}
+            <div className="horas-section">
+                <p className="horas-total">
+                    {(game.horas_jugadas || 0).toFixed(1)} horas jugadas
+                </p>
+
+                {!mostrarInput ? (
+                    <button
+                        className="btn-add-horas"
+                        onClick={() => setMostrarInput(true)}
+                    >
+                        + Agregar horas
+                    </button>
+                ) : (
+                    <div className="input-horas">
+                        <input
+                            type="number"
+                            step="0.5"
+                            min="0"
+                            placeholder="Ej: 2.5"
+                            value={horasInput}
+                            onChange={(e) => setHorasInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleAgregarHoras()}
+                        />
+                        <button onClick={handleAgregarHoras}>✓</button>
+                        <button onClick={() => {
+                            setMostrarInput(false);
+                            setHorasInput('');
+                        }}>✕</button>
+                    </div>
+                )}
             </div>
         </div>
     );

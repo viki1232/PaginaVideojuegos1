@@ -13,6 +13,9 @@ function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
     const [submitting, setSubmitting] = useState(false);
     const [editingReview, setEditingReview] = useState(null);
     const [likeProcessing, setLikeProcessing] = useState(false);
+    const [currentGame, setCurrentGame] = useState(null);
+    const [stats, setStats] = useState({ average_rating: 0, total_reviews: 0 });
+
     const { user } = useAuth();
 
     // 🔹 URL de tu backend
@@ -24,6 +27,15 @@ function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
             loadReviews();
         }
     }, [gameId]);
+
+    useEffect(() => {
+        if (gameId) {
+            const foundGame = gamesData.find(g => g.id === parseInt(gameId));
+            setCurrentGame(foundGame);
+        } else if (game) {
+            setCurrentGame(game);
+        }
+    }, [gameId, game]);
 
     const loadGame = () => {
         setLoading(true);
@@ -44,6 +56,8 @@ function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
                 const data = await response.json();
                 console.log('✅ Reviews cargados:', data.length);
                 setReviews(data);
+                setReviews(data.reviews);  // El array de reviews
+                setStats(data.stats);
             } else {
                 console.error('❌ Error al cargar reviews:', response.status);
                 setReviews([]);
@@ -198,6 +212,8 @@ function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
         }
     };
 
+
+
     if (loading) {
         return (
             <div className="loading-container">
@@ -235,7 +251,7 @@ function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
                             <div className="game-meta">
                                 <div className="rating-container">
                                     <Star size={24} className="star-filled" />
-                                    <span className="rating-text">{game.rating}/5</span>
+                                    <span className="rating-text">{stats.average_rating > 0 ? stats.average_rating : 'Sin ratings'}/5</span>
                                 </div>
                                 <span className="category-badge">{game.category}</span>
                             </div>
@@ -414,12 +430,10 @@ function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
                                 Purchase
                             </button>
                             <button
-                                className="add-to-library-button"
-                                onClick={() => onAddToLibrary(game)}
+                                className="add-to-library-button1"
+                                onClick={() => onAddToLibrary(currentGame)}
                             >
-
                                 <ShoppingCart className="wishlist-button" />
-
                                 Add to Wishlist
                             </button>
                         </div>

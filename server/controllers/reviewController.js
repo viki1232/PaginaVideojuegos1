@@ -1,5 +1,17 @@
+import { reduceEachTrailingCommentRange } from 'typescript';
 import Review from '../models/reviews.js';
 
+const calcularPromedioJuego = async (game_id) => {
+    const reviews = await Review.find({ game_id: parseInt(game_id) });
+    const totalReviews = reviews.length;
+    const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = totalReviews > 0 ? (totalRatings / totalReviews) : 0;
+
+    return {
+        average_rating: parseFloat(averageRating.toFixed(2)),
+        total_reviews: totalReviews
+    };
+};
 export const createReview = async (req, res) => {
     try {
         const { game_id, user_id, username, rating, comment } = req.body;
@@ -25,12 +37,18 @@ export const createReview = async (req, res) => {
 
         // Guardar en MongoDB
         await newReview.save();
+        const stats = await calcularPromedioJuego(game_id);
         console.log('✅ Review guardado en DB:', newReview._id);
+
+
 
         res.status(201).json({
             message: 'Review creado exitosamente',
-            review: newReview
+            review: newReview,
+            stats: stats
+
         });
+
 
     } catch (error) {
         console.error('❌ Error al crear review:', error);
@@ -46,14 +64,15 @@ export const getReviewsByGameId = async (req, res) => {
     try {
         const { gameId } = req.params;
 
-        console.log('🔍 Buscando reviews para game_id:', gameId);
-
         const reviews = await Review.find({ game_id: parseInt(gameId) })
-            .sort({ created_at: -1 }); // Más recientes primero
+            .sort({ created_at: -1 });
+        const stats = await calcularPromedioJuego(gameId);
 
-        console.log(`✅ Encontrados ${reviews.length} reviews`);
+        res.status(200).json({
+            reviews: reviews,
+            stats: stats
 
-        res.status(200).json(reviews);
+        });
 
     } catch (error) {
         console.error('❌ Error al obtener reviews:', error);
@@ -61,6 +80,7 @@ export const getReviewsByGameId = async (req, res) => {
             error: 'Error al obtener reviews',
             details: error.message
         });
+
     }
 };
 
@@ -88,10 +108,13 @@ export const deleteReview = async (req, res) => {
         if (!deletedReview) {
             return res.status(404).json({ error: 'Review no encontrado' });
         }
+        const game_id = deletedReview.game_id;
 
+        const stats = await calcularPromedioJuego(game_id);
         res.status(200).json({
             message: 'Review eliminado exitosamente',
-            review: deletedReview
+            review: deletedReview,
+            stats: stats
         });
 
     } catch (error) {
@@ -129,6 +152,7 @@ export const editReview = async (req, res) => {
         if (rating) updateFields.rating = parseInt(rating);
         if (comment) updateFields.comment = comment;
 
+
         // 🔹 Actualizar en MongoDB
         const updatedReview = await Review.findByIdAndUpdate(
             id,
@@ -146,9 +170,11 @@ export const editReview = async (req, res) => {
 
         console.log('✅ Review actualizado exitosamente');
 
+
         res.status(200).json({
             message: 'Review actualizado exitosamente',
-            review: updatedReview
+            review: updatedReview,
+
         });
 
     } catch (error) {
@@ -222,3 +248,5 @@ export const likes = async (req, res) => {
         });
     }
 };
+
+

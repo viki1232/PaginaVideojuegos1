@@ -28,6 +28,15 @@ const perfilSchema = new mongoose.Schema({
     added_at: {
         type: Date,
         default: Date.now
+    },
+    completado: {
+        type: Boolean, default: false
+    },
+    fecha_completado: {
+        type: Date, default: null
+    },
+    horas_jugadas: {
+        type: Number, default: 0
     }
 });
 
