@@ -398,14 +398,15 @@ function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
                                                             >
                                                                 <Trash2 size={16} />
                                                             </button>
-                                                            <button
-                                                                onClick={() => handlelikes(review._id)}
-                                                                className='Buttonlike'
-                                                                title='like'>
-                                                                👍 {review.likes || 0}
-                                                            </button>
+
                                                         </div>
                                                     )}
+                                                    <button
+                                                        onClick={() => handlelikes(review._id)}
+                                                        className='Buttonlike'
+                                                        title='like'>
+                                                        👍 {review.likes || 0}
+                                                    </button>
                                                 </div>
                                                 <p className="review-comment">{review.comment}</p>
                                             </>

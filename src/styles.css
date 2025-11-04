@@ -781,6 +781,77 @@
     margin: 0 auto;
 }
 
+.review-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.edit-btn {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.edit-btn:hover {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+
+.delete-btn {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+.Buttonlike {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid transparent;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+    color: #d1d5db;
+    transition: all 0.3s ease;
+}
+
+.Buttonlike:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.2) 100%);
+    border-color: #3b82f6;
+    transform: scale(1.05);
+    color: white;
+}
+
+.Buttonlike:active {
+    transform: scale(0.95);
+}
+
 @media (min-width: 768px) {
     .subscription-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -856,6 +927,20 @@
 
 .subscription-card.featured .subscription-btn:hover {
     background: var(--color-primary-dark);
+}
+
+.review-actions {
+    gap: 0.5rem;
+}
+
+.action-button {
+    width: 32px;
+    height: 32px;
+}
+
+.Buttonlike {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
 }
 
 /* ============================================
