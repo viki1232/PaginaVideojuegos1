@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Star, ShoppingCart } from 'lucide-react';
+import { Star, ShoppingCart, Search, X } from 'lucide-react';
 import { gamesData } from '../data/gamesData';  // ← IMPORTAR
 
 
@@ -8,20 +8,28 @@ function Store({ onNavigate }) {
     const [loading, setLoading] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [allStats, setAllStats] = useState({});
+    const [searchTerm, setSearchTerm] = useState('');
 
     const API_URL = 'http://localhost:2000/api/reviews';
     useEffect(() => {
         loadGames();
 
 
-    }, [selectedCategory]);
+    }, [selectedCategory, searchTerm]);
 
     const loadGames = async () => {  // ✅ Hacer async
         setLoading(true);
 
-        const filteredGames = selectedCategory === 'All'
+        let filteredGames = selectedCategory === 'All'
             ? gamesData
             : gamesData.filter(game => game.category === selectedCategory);
+
+        if (searchTerm.trim()) {
+            filteredGames = filteredGames.filter(game =>
+                game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                game.description.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
 
         setGames(filteredGames);
 
@@ -79,6 +87,9 @@ function Store({ onNavigate }) {
             console.error('💥 Error general:', error);
         }
     };
+    const clearSearch = () => {
+        setSearchTerm('');
+    };
 
     const categories = ['All', 'Action', 'Adventure', 'RPG', 'Racing', 'Strategy', 'Puzzle', 'Platform'];
 
@@ -92,6 +103,28 @@ function Store({ onNavigate }) {
             </div>
 
             <div className="store-content">
+                <div className="search-section">
+                    <div className="search-container">
+                        <Search className="search-icon" size={20} />
+                        <input
+                            type="text"
+                            placeholder="Search games..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="search-input"
+                        />
+                        {searchTerm && (
+                            <button onClick={clearSearch} className="clear-search-btn">
+                                <X size={18} />
+                            </button>
+                        )}
+                    </div>
+                    {searchTerm && (
+                        <p className="search-results-text">
+                            Found {games.length} game{games.length !== 1 ? 's' : ''} for "{searchTerm}"
+                        </p>
+                    )}
+                </div>
                 <div className="categories-section">
                     <div className="categories-container">
                         {categories.map((category) => (
