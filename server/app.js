@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import perfilRoutes from './routes/perfilRoutes.js';
 import comunityRoutes from './routes/comunityRoutes.js';
+import gameRoutes from './routes/gameRoutes.js';
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.get('/', (req, res) => {
 });
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/comunity', comunityRoutes);
+app.use('/api/games', gameRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 2000;
