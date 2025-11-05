@@ -249,4 +249,30 @@ export const likes = async (req, res) => {
     }
 };
 
+export const getAllStats = async (req, res) => {
+    try {
+        const stats = await Review.aggregate([
+            {
+                $group: {
+                    _id: "$game_id",
+                    average_rating: { $avg: "$rating" },
+                    total_reviews: { $sum: 1 }
+                }
+            }
+        ]);
 
+        // Convertir a objeto { gameId: { average_rating, total_reviews } }
+        const statsObject = {};
+        stats.forEach(stat => {
+            statsObject[stat._id] = {
+                average_rating: Math.round(stat.average_rating * 10) / 10,
+                total_reviews: stat.total_reviews
+            };
+        });
+
+        res.json(statsObject);
+    } catch (error) {
+        console.error('Error obteniendo stats:', error);
+        res.status(500).json({ error: error.message });
+    }
+};

@@ -5,6 +5,7 @@ import {
     getAllReviews,
     deleteReview,
     editReview,
+    getAllStats,
     likes,// ← Agregar import
 } from '../controllers/reviewController.js';
 
@@ -15,6 +16,7 @@ router.get('/:gameId', getReviewsByGameId);
 router.get('/', getAllReviews);
 router.put('/:id', editReview);  // ← Agregar ruta PUT
 router.delete('/:id', deleteReview);
-router.put('/:id/likes', likes); // ← Agregar ruta para likes
+router.put('/:id/likes', likes);
+router.get('/stats/bulk', getAllStats); // ← Agregar ruta para likes
 
 export default router;
