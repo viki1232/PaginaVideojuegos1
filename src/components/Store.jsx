@@ -1,25 +1,42 @@
 import { useEffect, useState } from 'react';
 import { Star, ShoppingCart, Search, X } from 'lucide-react';
-import { gamesData } from '../data/gamesData';  // ← IMPORTAR
+import { gamesData } from '../data/gamesData';
 
 
-function Store({ onNavigate }) {
+function Store({ onNavigate, onAddToLibrary, gameId }) {
     const [games, setGames] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [allStats, setAllStats] = useState({});
     const [searchTerm, setSearchTerm] = useState('');
+    const [game, setGame] = useState(null);
 
     const API_URL = 'http://localhost:2000/api/reviews';
     useEffect(() => {
-        loadGames();
-
+        loadAllStatsOnce();
+    }, []);
+    useEffect(() => {
+        filterGames();
 
     }, [selectedCategory, searchTerm]);
 
-    const loadGames = async () => {  // ✅ Hacer async
-        setLoading(true);
 
+    const loadAllStatsOnce = async () => {
+        try {
+            const response = await fetch(`${API_URL}/stats/bulk`);
+            if (response.ok) {
+                const stats = await response.json();
+                console.log('📊 Stats cargados:', stats);
+                setAllStats(stats);
+            }
+        } catch (error) {
+            console.error('Error cargando stats:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filterGames = () => {
         let filteredGames = selectedCategory === 'All'
             ? gamesData
             : gamesData.filter(game => game.category === selectedCategory);
@@ -32,60 +49,6 @@ function Store({ onNavigate }) {
         }
 
         setGames(filteredGames);
-
-        // ✅ Cargar stats DESPUÉS de tener los juegos
-        await loadAllStats(filteredGames);
-
-        setLoading(false);
-    };
-    const loadAllStats = async (gamesToLoad) => {
-        console.log('🎮 Juegos a cargar stats:', gamesToLoad.length);
-
-        try {
-            const statsPromises = gamesToLoad.map(async (game) => {
-                console.log(`📡 Haciendo fetch para juego ${game.id}`);
-
-                try {
-                    const response = await fetch(`${API_URL}/${game.id}`);
-                    console.log(`📨 Response para juego ${game.id}:`, response.status);
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log(`✅ Data recibida para juego ${game.id}:`, data);
-                        return {
-                            gameId: game.id,
-                            stats: data.stats
-                        };
-                    }
-
-                    return {
-                        gameId: game.id,
-                        stats: { average_rating: 0, total_reviews: 0 }
-                    };
-
-                } catch (error) {
-                    console.error(`❌ Error en juego ${game.id}:`, error);
-                    return {
-                        gameId: game.id,
-                        stats: { average_rating: 0, total_reviews: 0 }
-                    };
-                }
-            });
-
-            const results = await Promise.all(statsPromises);
-            console.log('📊 Results completos:', results);
-
-            const statsObject = {};
-            results.forEach(result => {
-                statsObject[result.gameId] = result.stats;
-            });
-
-            console.log('🎯 Stats finales (allStats):', statsObject);
-            setAllStats(statsObject);
-
-        } catch (error) {
-            console.error('💥 Error general:', error);
-        }
     };
     const clearSearch = () => {
         setSearchTerm('');
@@ -187,8 +150,8 @@ function Store({ onNavigate }) {
                                             className="add-to-library-button"
                                             onClick={() => onAddToLibrary(game)}
                                         >
-                                            <ShoppingCart className="cart-icon" />
-                                            Add to Library
+                                            <ShoppingCart className="wishlist-button" />
+                                            Add to Wishlist
                                         </button>
                                     </div>
                                 </div>

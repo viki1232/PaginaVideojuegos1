@@ -6,7 +6,7 @@ function Support({ onNavigate }) {
             <div className="support-header">
                 <div className="support-header-content">
                     <h1>Support Center</h1>
-                    <p>We're here to help you with any questions or issues</p>
+                    <p>Estamos aquí para ayudarte con cualquier pregunta o problema</p>
                 </div>
             </div>
 
@@ -18,7 +18,7 @@ function Support({ onNavigate }) {
                         </div>
                         <h3>Email Support</h3>
                         <p>
-                            Get in touch with our support team via email for detailed assistance.
+                            Ponte en contacto con nuestro equipo de soporte por correo electrónico para obtener asistencia detallada.
                         </p>
                         <a href="mailto:support@epicgamehub.com">
                             support@epicgamehub.com
@@ -31,76 +31,76 @@ function Support({ onNavigate }) {
                         </div>
                         <h3>Live Chat</h3>
                         <p>
-                            Chat with our support team in real-time for quick answers.
+                            Chatea con nuestro equipo de soporte en tiempo real para obtener respuestas rápidas.
                         </p>
-                        <button>Start Chat</button>
+                        <button>Iniciar Chat</button>
                     </div>
                 </div>
 
                 <div className="faq-section">
                     <h2>
                         <HelpCircle size={32} />
-                        Frequently Asked Questions
+                        Preguntas Frecuentes
                     </h2>
 
                     <div className="faq-list">
                         <details className="faq-item">
                             <summary>
-                                How do I purchase a game?
+                                ¿Cómo compro un juego?
                             </summary>
                             <p>
-                                Browse our game store, click on any game you're interested in, and click the "Purchase" button.
-                                You'll be guided through a secure checkout process. Once purchased, the game will be added to your library.
+                                Navega por nuestra tienda de juegos, haz clic en cualquier juego que te interese y haz clic en el botón "Comprar".
+                                Serás guiado a través de un proceso de pago seguro. Una vez comprado, el juego se agregará a tu biblioteca.
                             </p>
                         </details>
 
                         <details className="faq-item">
                             <summary>
-                                Can I get a refund?
+                                ¿Puedo obtener un reembolso?
                             </summary>
                             <p>
-                                Yes, we offer refunds within 14 days of purchase if you've played less than 2 hours.
-                                Contact our support team to request a refund.
+                                Sí, ofrecemos reembolsos dentro de los 14 días posteriores a la compra si has jugado menos de 2 horas.
+                                Contacta a nuestro equipo de soporte para solicitar un reembolso.
                             </p>
                         </details>
 
                         <details className="faq-item">
                             <summary>
-                                How do I access my purchased games?
+                                ¿Cómo accedo a mis juegos comprados?
                             </summary>
                             <p>
-                                All your purchased games are available in your library. Click on your profile and select "Library"
-                                to view and download your games.
+                                Todos tus juegos comprados están disponibles en tu biblioteca. Haz clic en tu perfil y selecciona "Biblioteca"
+                                para ver y descargar tus juegos.
                             </p>
                         </details>
 
                         <details className="faq-item">
                             <summary>
-                                What payment methods do you accept?
+                                ¿Qué métodos de pago aceptan?
                             </summary>
                             <p>
-                                We accept all major credit cards, PayPal, and various digital payment methods.
-                                All transactions are secured with industry-standard encryption.
+                                Aceptamos todas las principales tarjetas de crédito, PayPal y varios métodos de pago digital.
+                                Todas las transacciones están aseguradas con encriptación estándar de la industria.
                             </p>
                         </details>
 
                         <details className="faq-item">
                             <summary>
-                                How do I report a bug or issue?
+                                ¿Cómo reporto un error o problema?
                             </summary>
                             <p>
-                                You can report bugs through our support email or live chat. Please provide as much detail as possible,
-                                including screenshots if available, to help us resolve the issue quickly.
+                                Puedes reportar errores a través de nuestro correo de soporte o chat en vivo. Por favor proporciona tantos detalles como sea posible,
+                                incluyendo capturas de pantalla si están disponibles, para ayudarnos a resolver el problema rápidamente.
                             </p>
                         </details>
 
                         <details className="faq-item">
                             <summary>
-                                Is my account secure?
+                                ¿Mi cuenta está segura?
                             </summary>
                             <p>
-                                Yes, we take security seriously. All accounts are protected with secure authentication,
-                                and we use industry-standard encryption for all data transmission and storage.
+                                Sí, nos tomamos la seguridad en serio. Todas las cuentas están protegidas con autenticación segura,
+                                y utilizamos encriptación estándar de la industria para toda la transmisión y almacenamiento de datos.
                             </p>
                         </details>
                     </div>
@@ -109,13 +109,13 @@ function Support({ onNavigate }) {
                 <div className="cta-section">
                     <h2>
                         <Book size={32} />
-                        Still need help?
+                        ¿Todavía necesitas ayuda?
                     </h2>
                     <p>
-                        Our support team is available 24/7 to assist you with any questions or concerns.
+                        Nuestro equipo de soporte está disponible 24/7 para asistirte con cualquier pregunta o inquietud.
                     </p>
                     <button onClick={() => onNavigate('community')}>
-                        Visit Community Forums
+                        Visitar Foros de la Comunidad
                     </button>
                 </div>
             </div>

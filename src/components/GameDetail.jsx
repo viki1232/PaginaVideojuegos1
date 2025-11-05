@@ -13,7 +13,6 @@ function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
     const [submitting, setSubmitting] = useState(false);
     const [editingReview, setEditingReview] = useState(null);
     const [likeProcessing, setLikeProcessing] = useState(false);
-    const [currentGame, setCurrentGame] = useState(null);
     const [stats, setStats] = useState({ average_rating: 0, total_reviews: 0 });
 
     const { user } = useAuth();
@@ -28,14 +27,7 @@ function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
         }
     }, [gameId]);
 
-    useEffect(() => {
-        if (gameId) {
-            const foundGame = gamesData.find(g => g.id === parseInt(gameId));
-            setCurrentGame(foundGame);
-        } else if (game) {
-            setCurrentGame(game);
-        }
-    }, [gameId, game]);
+
 
     const loadGame = () => {
         setLoading(true);
@@ -432,7 +424,7 @@ function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
                             </button>
                             <button
                                 className="add-to-library-button1"
-                                onClick={() => onAddToLibrary(currentGame)}
+                                onClick={() => onAddToLibrary(game)}
                             >
                                 <ShoppingCart className="wishlist-button" />
                                 Add to Wishlist

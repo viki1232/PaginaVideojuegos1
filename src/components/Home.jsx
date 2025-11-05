@@ -8,12 +8,10 @@ function Home({ onNavigate }) {
     const API_URL = 'http://localhost:2000/api/reviews';
     useEffect(() => {
         loadGames();
-
     }, []);
-
     const loadGames = async () => {
         try {
-            // Simular datos de juegos para el ejemplo
+            // Datos de juegos
             const mockGames = [
                 { id: 1, title: 'Epic Adventure', category: 'Action', image_url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400' },
                 { id: 2, title: 'Space Warriors', category: 'Shooter', image_url: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400' },
@@ -22,66 +20,29 @@ function Home({ onNavigate }) {
                 { id: 5, title: 'Mystery Manor', category: 'Puzzle', image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400' }
             ];
 
-
-
-
             setGames(mockGames);
 
 
-            await loadAllStats(mockGames);
+            await loadAllStatsOptimized();
+
             setLoading(false);
         } catch (error) {
             console.error('Error loading games:', error);
             setLoading(false);
         }
     };
-    const loadAllStats = async (gamesToLoad) => {
-        console.log('🎮 Juegos a cargar stats:', gamesToLoad.length);
 
+
+    const loadAllStatsOptimized = async () => {
         try {
-            const statsPromises = gamesToLoad.map(async (game) => {
-                console.log(`📡 Haciendo fetch para juego ${game.id}`);
-
-                try {
-                    const response = await fetch(`${API_URL}/${game.id}`);
-                    console.log(`📨 Response para juego ${game.id}:`, response.status);
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log(`✅ Data recibida para juego ${game.id}:`, data);
-                        return {
-                            gameId: game.id,
-                            stats: data.stats
-                        };
-                    }
-
-                    return {
-                        gameId: game.id,
-                        stats: { average_rating: 0, total_reviews: 0 }
-                    };
-
-                } catch (error) {
-                    console.error(`❌ Error en juego ${game.id}:`, error);
-                    return {
-                        gameId: game.id,
-                        stats: { average_rating: 0, total_reviews: 0 }
-                    };
-                }
-            });
-
-            const results = await Promise.all(statsPromises);
-            console.log('📊 Results completos:', results);
-
-            const statsObject = {};
-            results.forEach(result => {
-                statsObject[result.gameId] = result.stats;
-            });
-
-            console.log('🎯 Stats finales (allStats):', statsObject);
-            setAllStats(statsObject);
-
+            const response = await fetch(`${API_URL}/stats/bulk`);
+            if (response.ok) {
+                const stats = await response.json();
+                console.log('📊 Stats cargados:', stats);
+                setAllStats(stats);
+            }
         } catch (error) {
-            console.error('💥 Error general:', error);
+            console.error('Error cargando stats:', error);
         }
     };
 
