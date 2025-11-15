@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://viki1232.github.io/servidorpaginajue",
+  "homepage": "https://viki1232.github.io/PaginaVideojuegos1",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

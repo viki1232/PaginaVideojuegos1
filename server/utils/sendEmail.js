@@ -32,7 +32,7 @@ export const sendVerificationEmail = async (email, username, token) => {
     console.log('📧 Para:', email);
     console.log('📧 Username:', username);
 
-    const verificationUrl = `http://localhost:5173/verify/${token}`;
+    const verificationUrl = `https://viki1232.github.io/PaginaVideojuegos1/verify?token=${token}`;
 
     const mailOptions = {
         from: `"EpicGameHub" <${process.env.EMAIL_USER}>`,

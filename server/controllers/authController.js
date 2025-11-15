@@ -242,7 +242,7 @@ export const resendVerification = async (req, res) => {
             }
         });
 
-        const verificationLink = `https://tu-dominio.com/verify?token=${verificationToken}`;
+        const verificationLink = `https://viki1232.github.io/PaginaVideojuegos1/verify?token=${verificationToken}`;
 
         await transporter.sendMail({
             from: `"Soporte SmartLink" <${process.env.EMAIL_USER}>`,

@@ -14,9 +14,9 @@ const router = express.Router();
 router.post('/', createReview); // ← Agregar ruta para likes
 router.get('/:gameId', getReviewsByGameId);
 router.get('/', getAllReviews);
-router.put('/:id', editReview);  // ← Agregar ruta PUT
+router.put('/:id', editReview);
 router.delete('/:id', deleteReview);
 router.put('/:id/likes', likes);
-router.get('/stats/bulk', getAllStats); // ← Agregar ruta para likes
+router.get('/stats/bulk', getAllStats);
 
 export default router;

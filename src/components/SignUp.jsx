@@ -4,6 +4,7 @@ import { Gamepad2, CheckCircle, Check, X } from 'lucide-react';
 
 
 function SignUp({ onNavigate }) {
+    requisitos
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');

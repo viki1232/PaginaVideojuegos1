@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificación de Email - EpicGameHub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .success {
+            color: #48bb78;
+            font-size: 60px;
+        }
+
+        .error {
+            color: #f56565;
+            font-size: 60px;
+        }
+
+        p {
+            color: #4a5568;
+            font-size: 16px;
+            margin: 15px 0;
+        }
+
+        .btn {
+            background-color: #667eea;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: #5568d3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎮 EpicGameHub</h1>
+        <div id="message">
+            <div class="spinner"></div>
+            <p>Verificando tu email...</p>
+        </div>
+    </div>
+
+    <script>
+        const messageDiv = document.getElementById('message');
+
+        // Obtener el token de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (!token) {
+            messageDiv.innerHTML = `
+                <div class="error">❌</div>
+                <p>Token no encontrado en la URL</p>
+                <a href="index.html" class="btn">Volver al inicio</a>
+            `;
+        } else {
+            // Llamar al backend para verificar
+            fetch(`https://tu-backend-url.com/api/auth/verify/${token}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message || data.error === undefined) {
+                        messageDiv.innerHTML = `
+                            <div class="success">✅</div>
+                            <p><strong>¡Email verificado exitosamente!</strong></p>
+                            <p>Ya puedes iniciar sesión</p>
+                            <a href="login.html" class="btn">Ir al Login</a>
+                        `;
+                    } else {
+                        messageDiv.innerHTML = `
+                            <div class="error">❌</div>
+                            <p>${data.error || 'Error al verificar el email'}</p>
+                            <a href="index.html" class="btn">Volver al inicio</a>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    messageDiv.innerHTML = `
+                        <div class="error">❌</div>
+                        <p>Error de conexión con el servidor</p>
+                        <a href="index.html" class="btn">Volver al inicio</a>
+                    `;
+                });
+        }
+    </script>
+</body>
+
+</html>
