@@ -261,7 +261,7 @@ export const getAllStats = async (req, res) => {
             }
         ]);
 
-        // Convertir a objeto { gameId: { average_rating, total_reviews } }
+
         const statsObject = {};
         stats.forEach(stat => {
             statsObject[stat._id] = {

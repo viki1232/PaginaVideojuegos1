@@ -19,7 +19,21 @@ const replySchema = new mongoose.Schema({
     created_at: {
         type: Date,
         default: Date.now
-    }
+    
+    },
+    image_url: {
+        type: String,
+        default: null
+    },
+
+    likes: {
+        type: Number,
+        default: 0
+    },
+    likedBy: {
+        type: [String],
+        default: []
+    },
 });
 
 // ✅ Schema principal con replies

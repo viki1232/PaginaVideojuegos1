@@ -29,9 +29,21 @@ function GameDetail({ gameId, onNavigate, onAddToLibrary }) {
 
 
 
-    const loadGame = () => {
+    const loadGame = async () => {
         setLoading(true);
-        const gameData = gamesData.find(g => g.id === gameId);
+        let gameData = gamesData.find(g => g.id === gameId);
+        if (!gameData) {
+            try {
+                const response = await fetch(`http://localhost:2000/api/games/${gameId}`);
+                if (response.ok) {
+                    gameData = await response.json();
+                    console.log('✅ Juego encontrado en MongoDB:', gameData);
+                }
+            } catch (error) {
+                console.error('❌ Error buscando juego:', error);
+            }
+        }
+
         setTimeout(() => {
             setGame(gameData || null);
             setLoading(false);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from './contexts/AuthContext'; // ✅ AGREGAR
+import { useAuth } from './contexts/AuthContext'; 
 import Navbar from './components/Navbar';
 import Home from './components/Home';
 import Store from './components/Store';
@@ -14,7 +14,7 @@ import Footer from './components/Footer';
 import EmailVerification from './components/EmailVerification';
 
 function App() {
-  const { user } = useAuth(); // ✅ AGREGAR esta línea
+  const { user } = useAuth(); 
   const [currentView, setCurrentView] = useState('home');
   const [selectedGame, setSelectedGame] = useState(null);
   const [verificationToken, setVerificationToken] = useState(null);
